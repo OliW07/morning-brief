@@ -25,9 +25,8 @@ service or an official Oura product. OAuth integration is implemented, but live
 account authorization and end-to-end API sync still need verification. Sample
 previews are explicitly labelled and do not represent anyone's real data.
 
-The current morning launcher expects a separately configured local Android
-emulator and Bluetooth service; this repository does not install those privileged
-components. The ordinary dashboard/API commands do not need an emulator.
+This project connects directly to the Oura API. It displays records already
+available in Oura Cloud and does not manage your ring's connection.
 
 ## Local use
 
@@ -74,13 +73,11 @@ PKCE and state verification, and refreshes tokens automatically. Tokens and the
 client secret are owner-readable local files, not encrypted storage. Local users
 with sufficient OS privileges can read them. No credentials are bundled.
 
-## Sync and Bluetooth
+## Data freshness
 
-The API reads Oura Cloud, not the ring. Data must first sync through the Oura app.
-The personal emulator setup briefly borrows the laptop's adapter, interrupting
-Fedora Bluetooth devices, and shuts Android down before returning the adapter.
-It cannot share one physical adapter simultaneously. First daily use is tracked
-from 03:00 local time. A failed or late sync is explicitly labelled; old records
+The API reads Oura Cloud, not the ring. Your records must be available in Oura
+Cloud before the dashboard can retrieve them. First daily use is tracked from
+03:00 local time. A failed or late update is explicitly labelled; old records
 are not presented as today's. No background automation is enabled by this repo.
 
 ## Development

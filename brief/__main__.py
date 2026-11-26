@@ -11,10 +11,10 @@ from .storage import STATE, config, load, morning_day
 def main():
     parser = argparse.ArgumentParser(description='A quiet, once-a-morning terminal briefing.')
     sub = parser.add_subparsers(dest='command', required=True)
-    sub.add_parser('open', help='Open your dashboard without starting Android')
+    sub.add_parser('open', help='Open your dashboard')
     sub.add_parser('preview', help='Open a clearly labelled sample-data preview')
     sub.add_parser('connect', help='Connect your own Oura account with OAuth')
-    sub.add_parser('fetch', help='Refresh the local API cache without starting Android')
+    sub.add_parser('fetch', help='Refresh the local API cache')
     sub.add_parser('run', help='Run today’s once-only background sync and briefing')
     sub.add_parser('check', help='Check whether first-use conditions are met')
     sub.add_parser('status', help='Show setup and morning-trigger state')
@@ -28,7 +28,7 @@ def main():
     p.add_argument('--demo', action='store_true')
     p.add_argument('--automatic')
     args = parser.parse_args()
-    # A service stop must unwind the sync's finally block and release Bluetooth.
+    # Exit cleanly when the user service is stopped.
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try:
         if args.command == 'open':

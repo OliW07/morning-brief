@@ -57,30 +57,24 @@ class MorningTests(TemporaryState):
                 with storage.locked('run.lock', blocking=False):
                     self.fail('Concurrent process acquired the run lock')
 
-    def test_timeout_releases_owned_emulator(self):
-        emulator = Mock()
+    def test_cloud_wait_is_bounded(self):
         clock = [0.0]
         def sleep(seconds):
             clock[0] += seconds
-        with patch.object(morning, 'Emulator', return_value=emulator), \
-             patch.object(oura, 'connected', return_value=True), \
+        with patch.object(oura, 'connected', return_value=True), \
              patch.object(oura, 'fetch', return_value={}), \
              patch.object(morning, 'config', return_value={'sync_timeout': 60, 'poll_interval': 15}), \
              patch.object(morning.time, 'monotonic', side_effect=lambda: clock[0]), \
              patch.object(morning.time, 'sleep', side_effect=sleep):
             result = morning.sync('2026-11-11')
         self.assertIn('timed out', result)
-        emulator.close.assert_called_once()
         self.assertEqual(clock[0], 60)
 
-    def test_membership_denial_still_releases_emulator(self):
-        emulator = Mock()
-        with patch.object(morning, 'Emulator', return_value=emulator), \
-             patch.object(oura, 'connected', return_value=True), \
+    def test_membership_denial_is_reported(self):
+        with patch.object(oura, 'connected', return_value=True), \
              patch.object(oura, 'fetch', side_effect=oura.OuraError('Oura denied access: membership')):
             result = morning.sync('2026-11-11')
         self.assertIn('not verified', result)
-        emulator.close.assert_called_once()
 
 
 class DataTests(TemporaryState):

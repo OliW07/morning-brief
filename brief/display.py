@@ -132,7 +132,7 @@ def dashboard(data, error='', demo=False, now=None):
     trend.append('  past 7 days', style=MUTED)
 
     if demo:
-        status = 'DESIGN PREVIEW · Sample values, not your health data. No emulator or API calls.'
+        status = 'DESIGN PREVIEW · Sample values, not your health data. No API calls.'
     elif error:
         status = error
     elif not oura.connected():

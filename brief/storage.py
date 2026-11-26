@@ -57,7 +57,7 @@ def locked(name, blocking=True):
 
 
 def claim_day(day):
-    """Caller holds run.lock. Persist before launching, so crashes cannot relaunch."""
+    """Caller holds run.lock. Persist before fetching, so crashes cannot repeat it."""
     state = load(STATE / 'morning.json')
     if state.get('day') != day:
         state = {'day': day, 'sync_attempted': False, 'shown': False}
@@ -65,6 +65,6 @@ def claim_day(day):
     if first:
         state['sync_attempted'] = True
         state['started_at'] = dt.datetime.now().astimezone().isoformat()
-        state['sync_status'] = 'A previous attempt was interrupted; no second emulator launch today.'
+        state['sync_status'] = 'A previous attempt was interrupted; no second automatic update today.'
         save(STATE / 'morning.json', state)
     return state, first
