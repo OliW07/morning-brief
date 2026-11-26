@@ -2,7 +2,9 @@
 
 A personal, local-first Linux terminal dashboard for Oura sleep, readiness and
 activity data. A transparent, fastfetch-inspired briefing prints above a normal
-interactive shell. Weather and email integrations are not implemented.
+interactive shell. Optional weather and Gmail unread-count integrations are
+available in the local installation; their source is not yet included in this
+repository snapshot. Their data handling is documented in the privacy policy.
 
 **Website:** https://oliw07.github.io/morning-brief/
 
