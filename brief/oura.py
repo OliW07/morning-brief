@@ -45,19 +45,20 @@ def token_response(response, oauth=None):
         raise OuraError(f'Token exchange: HTTP {response.status_code}, {label}. {hint}')
     if isinstance(payload, dict) and 'scope' in payload:
         granted = payload['scope']
+        if granted is None:
+            granted = []
         if isinstance(granted, str):
             granted = granted.replace(',', ' ').split()
         if not isinstance(granted, list) or not all(isinstance(s, str) for s in granted):
             raise OuraError('Oura returned an invalid permission list. Please reconnect.')
-        if 'daily' not in granted:
-            known = {'daily', 'email', 'personal', 'heartrate', 'workout', 'tag', 'session', 'spo2', 'stress', 'heart_health', 'ring_configuration'}
-            names = ', '.join(s for s in granted if s in known) or '(none recognized)'
-            raise OuraError(f'Oura token response did not include daily. Recognized returned scopes: {names}. Your app settings may still be correct; this is the token response, not the registration page.')
         if oauth is not None:
-            # OAuth permits the granted scopes to differ from those requested.
-            # Validate our required scope, then let oauthlib parse the actual grant.
-            oauth.scope = granted
-        payload['scope'] = ' '.join(granted)
+            # Do not infer API access from inconsistent provider scope metadata.
+            # authorize() verifies all daily endpoints before reporting success.
+            oauth.scope = granted or None
+        if granted:
+            payload['scope'] = ' '.join(granted)
+        else:
+            payload.pop('scope', None)
         response._content = json.dumps(payload).encode('utf-8')
     return response
 
@@ -122,7 +123,7 @@ def authorize():
     with locked('oauth.lock'):
         save(CONFIG / 'oura-client.json', {'client_id': client_id, 'client_secret': secret})
         save(STATE / 'oura-token.json', dict(token))
-    print('Connected. Checking access to your daily data…')
+    print('Authorization received. Verifying access to your daily data…')
     data = fetch()
     print(f'API access verified. Received {sum(len(data[k]) for k in COLLECTIONS)} records.')
 

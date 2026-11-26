@@ -91,11 +91,17 @@ class DataTests(TemporaryState):
             session._client.parse_request_body_response(response.text, scope=session.scope)
             self.assertIn('daily', session._client.token['scope'])
 
-    def test_oauth_missing_daily_is_rejected(self):
-        response = Mock(status_code=200)
-        response.json.return_value = {'scope':'personal'}
-        with self.assertRaisesRegex(oura.OuraError, 'did not include daily'):
-            oura.token_response(response)
+    def test_oauth_empty_metadata_defers_access_check_to_api(self):
+        import requests
+        from requests_oauthlib import OAuth2Session
+        for scope in ('', [], None, 'extapi:daily'):
+            session = OAuth2Session('test', scope=['daily'])
+            response = requests.Response()
+            response.status_code = 200
+            response._content = json.dumps({'access_token':'test-only','token_type':'Bearer','scope':scope}).encode()
+            oura.token_response(response, session)
+            session._client.parse_request_body_response(response.text, scope=session.scope)
+            self.assertEqual(session._client.token['access_token'], 'test-only')
 
     def test_yesterday_is_not_todays_sync_and_nap_does_not_replace_main_sleep(self):
         data = display.sample_data(dt.date(2026, 11, 10))
