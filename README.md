@@ -8,6 +8,14 @@ interactive shell. Weather and email integrations are not implemented.
 
 **Privacy policy:** https://oliw07.github.io/morning-brief/privacy.html
 
+## Screenshot
+
+![Morning Brief running in a Kitty terminal with sleep, readiness and activity summaries, and an interactive shell prompt below](docs/assets/terminal.png)
+
+Actual terminal screenshot using explicitly labelled **sample data**, not live
+Oura records. Captured against an opaque background for legibility and desktop
+privacy; the installed widget supports a transparent background.
+
 ## Status
 
 This is the source of a personal Hyprland/Kitty dashboard, not a hosted health
