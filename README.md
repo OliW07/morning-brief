@@ -57,7 +57,7 @@ Register your own personal application at https://developer.ouraring.com/:
 | Website | https://oliw07.github.io/morning-brief/ |
 | Privacy policy | https://oliw07.github.io/morning-brief/privacy.html |
 | Terms of service | https://oliw07.github.io/morning-brief/terms.html |
-| Redirect URI | `http://127.0.0.1:8765/callback` |
+| Redirect URI | `http://localhost:8765/callback` |
 | Permission | `daily` |
 | Description | Personal local terminal dashboard displaying my Oura sleep, readiness and activity summaries. Data is fetched directly from Oura and stored only on my computer. |
 

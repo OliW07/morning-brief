@@ -14,7 +14,7 @@ from .storage import CONFIG, STATE, config, load, locked, save
 AUTHORIZE = 'https://cloud.ouraring.com/oauth/authorize'
 TOKEN_URL = 'https://api.ouraring.com/oauth/token'
 API = 'https://api.ouraring.com/v2/usercollection/'
-REDIRECT = 'http://127.0.0.1:8765/callback'
+REDIRECT = 'http://localhost:8765/callback'
 UA = 'MorningBrief/1.0 (personal local dashboard)'
 COLLECTIONS = ('daily_sleep', 'daily_readiness', 'sleep', 'daily_activity')
 
