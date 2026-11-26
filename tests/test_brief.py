@@ -94,7 +94,7 @@ class DataTests(TemporaryState):
     def test_oauth_missing_daily_is_rejected(self):
         response = Mock(status_code=200)
         response.json.return_value = {'scope':'personal'}
-        with self.assertRaisesRegex(oura.OuraError, 'did not grant Daily'):
+        with self.assertRaisesRegex(oura.OuraError, 'did not include daily'):
             oura.token_response(response)
 
     def test_yesterday_is_not_todays_sync_and_nap_does_not_replace_main_sleep(self):

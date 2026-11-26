@@ -12,7 +12,7 @@ from requests_oauthlib import OAuth2Session
 
 from .storage import CONFIG, STATE, config, load, locked, save
 
-AUTHORIZE = 'https://cloud.ouraring.com/oauth/authorize'
+AUTHORIZE = 'https://developer.ouraring.com/authorize'
 TOKEN_URL = 'https://api.ouraring.com/oauth/token'
 API = 'https://api.ouraring.com/v2/usercollection/'
 REDIRECT = 'http://localhost:8765/callback'
@@ -50,7 +50,9 @@ def token_response(response, oauth=None):
         if not isinstance(granted, list) or not all(isinstance(s, str) for s in granted):
             raise OuraError('Oura returned an invalid permission list. Please reconnect.')
         if 'daily' not in granted:
-            raise OuraError('Oura did not grant Daily access. Enable Daily for the application and approve it when connecting.')
+            known = {'daily', 'email', 'personal', 'heartrate', 'workout', 'tag', 'session', 'spo2', 'stress', 'heart_health', 'ring_configuration'}
+            names = ', '.join(s for s in granted if s in known) or '(none recognized)'
+            raise OuraError(f'Oura token response did not include daily. Recognized returned scopes: {names}. Your app settings may still be correct; this is the token response, not the registration page.')
         if oauth is not None:
             # OAuth permits the granted scopes to differ from those requested.
             # Validate our required scope, then let oauthlib parse the actual grant.
