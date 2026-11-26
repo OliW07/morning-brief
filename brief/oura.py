@@ -1,5 +1,6 @@
 import datetime as dt
 import getpass
+import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import secrets
 import time
@@ -23,7 +24,7 @@ class OuraError(Exception):
     pass
 
 
-def token_response(response):
+def token_response(response, oauth=None):
     """Surface only allowlisted OAuth errors, never response bodies or tokens."""
     try:
         payload = response.json()
@@ -42,6 +43,20 @@ def token_response(response):
         hint = hints.get(error, 'Oura rejected the token exchange; check the application settings.')
         label = error if error in hints else 'unrecognized_error'
         raise OuraError(f'Token exchange: HTTP {response.status_code}, {label}. {hint}')
+    if isinstance(payload, dict) and 'scope' in payload:
+        granted = payload['scope']
+        if isinstance(granted, str):
+            granted = granted.replace(',', ' ').split()
+        if not isinstance(granted, list) or not all(isinstance(s, str) for s in granted):
+            raise OuraError('Oura returned an invalid permission list. Please reconnect.')
+        if 'daily' not in granted:
+            raise OuraError('Oura did not grant Daily access. Enable Daily for the application and approve it when connecting.')
+        if oauth is not None:
+            # OAuth permits the granted scopes to differ from those requested.
+            # Validate our required scope, then let oauthlib parse the actual grant.
+            oauth.scope = granted
+        payload['scope'] = ' '.join(granted)
+        response._content = json.dumps(payload).encode('utf-8')
     return response
 
 
@@ -60,7 +75,7 @@ def authorize():
         raise OuraError('Both client ID and client secret are required.')
     state = secrets.token_urlsafe(32)
     oauth = OAuth2Session(client_id, redirect_uri=REDIRECT, scope=['daily'], state=state, pkce='S256')
-    oauth.register_compliance_hook('access_token_response', token_response)
+    oauth.register_compliance_hook('access_token_response', lambda response: token_response(response, oauth))
     url, expected_state = oauth.authorization_url(AUTHORIZE)
     result = {}
 
@@ -121,6 +136,7 @@ def access_token(force=False):
             return token['access_token']
         try:
             oauth = OAuth2Session(client['client_id'], token=token)
+            oauth.register_compliance_hook('refresh_token_response', lambda response: token_response(response, oauth))
             updated = oauth.refresh_token(TOKEN_URL, refresh_token=token['refresh_token'],
                                            client_id=client['client_id'], client_secret=client['client_secret'],
                                            headers={'User-Agent': UA}, timeout=15)

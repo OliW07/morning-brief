@@ -78,6 +78,25 @@ class MorningTests(TemporaryState):
 
 
 class DataTests(TemporaryState):
+    def test_oauth_actual_grant_is_parsed_without_scope_warning(self):
+        import requests
+        from requests_oauthlib import OAuth2Session
+        for granted in ('daily', 'daily personal', 'daily,personal', ['daily', 'personal']):
+            session = OAuth2Session('test', scope=['daily'])
+            response = requests.Response()
+            response.status_code = 200
+            response._content = json.dumps({'access_token':'test-only', 'token_type':'Bearer',
+                                            'scope':granted}).encode()
+            oura.token_response(response, session)
+            session._client.parse_request_body_response(response.text, scope=session.scope)
+            self.assertIn('daily', session._client.token['scope'])
+
+    def test_oauth_missing_daily_is_rejected(self):
+        response = Mock(status_code=200)
+        response.json.return_value = {'scope':'personal'}
+        with self.assertRaisesRegex(oura.OuraError, 'did not grant Daily'):
+            oura.token_response(response)
+
     def test_yesterday_is_not_todays_sync_and_nap_does_not_replace_main_sleep(self):
         data = display.sample_data(dt.date(2026, 11, 10))
         self.assertFalse(oura.today_ready(data, '2026-11-11'))
