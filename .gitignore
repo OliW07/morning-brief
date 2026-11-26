@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env*
+*-token.json
+oura-client.json
+oura-cache.json
+*.log
+diagnostics/
+.DS_Store
