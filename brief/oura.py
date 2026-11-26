@@ -23,6 +23,28 @@ class OuraError(Exception):
     pass
 
 
+def token_response(response):
+    """Surface only allowlisted OAuth errors, never response bodies or tokens."""
+    try:
+        payload = response.json()
+    except ValueError:
+        raise OuraError(f'Oura token endpoint returned HTTP {response.status_code} with an unexpected response.') from None
+    error = payload.get('error') if isinstance(payload, dict) else None
+    hints = {
+        'invalid_client': 'The client ID/secret was rejected. Copy both from the same Oura application.',
+        'invalid_grant': 'The authorization code or PKCE check was rejected. Start a fresh connection and verify the exact registered redirect URL.',
+        'invalid_request': 'Oura rejected the token request parameters.',
+        'unauthorized_client': 'This Oura application is not permitted to use this authorization flow.',
+        'invalid_scope': 'Check that Daily is enabled for your Oura application.',
+        'access_denied': 'Oura denied authorization for this application.',
+    }
+    if error or response.status_code >= 400:
+        hint = hints.get(error, 'Oura rejected the token exchange; check the application settings.')
+        label = error if error in hints else 'unrecognized_error'
+        raise OuraError(f'Token exchange: HTTP {response.status_code}, {label}. {hint}')
+    return response
+
+
 def connected():
     return bool(load(STATE / 'oura-token.json').get('refresh_token'))
 
@@ -38,6 +60,7 @@ def authorize():
         raise OuraError('Both client ID and client secret are required.')
     state = secrets.token_urlsafe(32)
     oauth = OAuth2Session(client_id, redirect_uri=REDIRECT, scope=['daily'], state=state, pkce='S256')
+    oauth.register_compliance_hook('access_token_response', token_response)
     url, expected_state = oauth.authorization_url(AUTHORIZE)
     result = {}
 
@@ -71,8 +94,14 @@ def authorize():
     try:
         token = oauth.fetch_token(TOKEN_URL, code=result['code'], client_secret=secret,
                                   include_client_id=True, headers={'User-Agent': UA}, timeout=20)
-    except Exception:
-        raise OuraError('Token exchange failed. Check your app credentials and exact redirect URI.') from None
+    except OuraError:
+        raise
+    except requests.RequestException:
+        raise OuraError('Could not reach the Oura token endpoint securely. Check the network and try connecting again.') from None
+    except Warning:
+        raise OuraError('Oura returned different permissions than requested. Check that Daily is enabled and required, then connect again.') from None
+    except Exception as exc:
+        raise OuraError(f'Token exchange failed ({type(exc).__name__}). Check your app credentials and exact redirect URI: {REDIRECT}') from None
     with locked('oauth.lock'):
         save(CONFIG / 'oura-client.json', {'client_id': client_id, 'client_secret': secret})
         save(STATE / 'oura-token.json', dict(token))
